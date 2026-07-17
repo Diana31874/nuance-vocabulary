@@ -127,16 +127,9 @@ const comparisons: Record<string, {
 };
 
 const fallbackComparison = (base: string, word: string) => ({
-  verdict: `${base[0].toUpperCase() + base.slice(1)} and ${word} overlap in this sense, but they differ in context, register, or emotional force. Select a section below for a closer comparison.`,
-  tags: [`${word} · context-dependent`, `${base} · current sense`, "comparison preview"],
-  sections: [
-    { title: "Core difference in meaning", content: `${word} expresses a more specific shade of the current meaning of ${base}. Generate the live comparison to see the precise distinction.` },
-    { title: "Formality & emotional tone", content: "The best choice depends on the speaker’s level of praise, intensity, and intended register." },
-    { title: "Typical situations", content: "Check the surrounding noun and the purpose of the sentence before substituting either word." },
-    { title: "Common collocations", content: `Explore frequent combinations with ${word} before using it in unfamiliar contexts.` },
-    { title: "Substitution test", content: `Replacing ${base} with ${word} may change the sentence’s precision, register, or emotional force.` },
-    { title: "Examples & misuse", content: "The full analysis flags combinations that are grammatical but unnatural to fluent speakers." },
-  ],
+  verdict: `The detailed comparison between ${base} and ${word} has not loaded yet.`,
+  tags: [],
+  sections: [],
 });
 
 const practiceQuestions = [
@@ -306,11 +299,32 @@ export default function Home() {
   }, [set]);
 
   const currentAiComparison = aiComparison?.base === centerWord && aiComparison.target === selected ? aiComparison : null;
-  const comparison = currentAiComparison
-    ?? (centerWord === "brave" ? comparisons[selected] : undefined)
-    ?? fallbackComparison(centerWord, selected);
+  const detailedComparison = currentAiComparison
+    ?? (centerWord === "brave" ? comparisons[selected] : undefined);
+  const comparison = detailedComparison ?? fallbackComparison(centerWord, selected);
+  const hasDetailedComparison = Boolean(detailedComparison);
   const practice = aiPractice ?? practiceQuestions[practiceIndex % practiceQuestions.length];
   const dailyWord = useMemo(getDailyWord, []);
+
+  const requestComparison = async (base: string, target: string, sense: string) => {
+    const requestId = comparisonRequestRef.current + 1;
+    comparisonRequestRef.current = requestId;
+    setSelected(target);
+    setAiComparison(null);
+    setLoading("compare");
+    try {
+      const data = await requestAi<ComparisonData>("compare", { base, target, sense });
+      if (comparisonRequestRef.current === requestId) {
+        setAiComparison({ ...data, base, target });
+      }
+    } catch (error) {
+      if (comparisonRequestRef.current === requestId) {
+        setFeedback(error instanceof Error ? error.message : "Could not compare those words.");
+      }
+    } finally {
+      if (comparisonRequestRef.current === requestId) setLoading("");
+    }
+  };
 
   const exploreWord = async (input: string) => {
     const normalized = input.trim().toLowerCase();
@@ -325,9 +339,11 @@ export default function Home() {
       setQuery(data.word);
       setAiSenses(data.senses);
       setActiveSenseIndex(likelyIndex);
-      setSelected(data.senses[likelyIndex]?.nodes[0]?.word ?? "");
-      setAiComparison(null);
+      const initialTarget = data.senses[likelyIndex]?.nodes[0]?.word ?? "";
       setSenseOpen(data.senses.length > 1);
+      if (initialTarget) {
+        await requestComparison(data.word, initialTarget, data.senses[likelyIndex].definition);
+      }
     } catch (error) {
       if (wordSets[normalized]) {
         setCenterWord(normalized);
@@ -350,28 +366,10 @@ export default function Home() {
   };
 
   const selectNode = async (word: string) => {
-    const base = centerWord;
-    const sense = set.sense;
-    const requestId = comparisonRequestRef.current + 1;
-    comparisonRequestRef.current = requestId;
-    setSelected(word);
-    setAiComparison(null);
-    setLoading("compare");
-    try {
-      const data = await requestAi<ComparisonData>("compare", { base, target: word, sense });
-      if (comparisonRequestRef.current === requestId) {
-        setAiComparison({ ...data, base, target: word });
-      }
-    } catch (error) {
-      if (comparisonRequestRef.current === requestId) {
-        setFeedback(error instanceof Error ? error.message : "Could not compare those words.");
-      }
-    } finally {
-      if (comparisonRequestRef.current === requestId) setLoading("");
-    }
+    await requestComparison(centerWord, word, set.sense);
   };
 
-  const openDailyWord = () => {
+  const openDailyWord = async () => {
     comparisonRequestRef.current += 1;
     const nodes = dailyWord.nodes.map((word, index) => ({
       word,
@@ -387,10 +385,12 @@ export default function Home() {
       nodes,
     }]);
     setActiveSenseIndex(0);
-    setSelected(nodes[0]?.word ?? "");
     setAiComparison(null);
     setSenseOpen(false);
-    setFeedback("Today’s preview and full map now use the same words.");
+    setFeedback("");
+    if (nodes[0]) {
+      await requestComparison(dailyWord.word, nodes[0].word, dailyWord.distinction);
+    }
   };
 
   const analyzeChoice = async () => {
@@ -449,27 +449,11 @@ export default function Home() {
   };
 
   const explainAnotherWay = async () => {
-    const base = centerWord;
-    const target = selected;
-    const requestId = comparisonRequestRef.current + 1;
-    comparisonRequestRef.current = requestId;
-    setLoading("compare");
-    try {
-      const data = await requestAi<ComparisonData>("compare", {
-        base,
-        target,
-        sense: `${set.sense}. Explain with a different framing and different examples.`,
-      });
-      if (comparisonRequestRef.current === requestId) {
-        setAiComparison({ ...data, base, target });
-      }
-    } catch (error) {
-      if (comparisonRequestRef.current === requestId) {
-        setFeedback(error instanceof Error ? error.message : "Could not regenerate the explanation.");
-      }
-    } finally {
-      if (comparisonRequestRef.current === requestId) setLoading("");
-    }
+    await requestComparison(
+      centerWord,
+      selected,
+      `${set.sense}. Explain with a different framing and different examples.`,
+    );
   };
 
   const saveContrast = () => {
@@ -563,9 +547,11 @@ export default function Home() {
                             key={sense.id}
                             onClick={() => {
                               setActiveSenseIndex(index);
-                              setSelected(sense.nodes[0]?.word ?? selected);
                               setAiComparison(null);
                               setSenseOpen(false);
+                              if (sense.nodes[0]) {
+                                void requestComparison(centerWord, sense.nodes[0].word, sense.definition);
+                              }
                             }}
                           >
                             {sense.definition} {index === activeSenseIndex && <span>current</span>}
@@ -637,18 +623,28 @@ export default function Home() {
                 <div className="chips">{comparison.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
                 <div className="detail-sections">
                   {loading === "compare" && <p className="ai-loading">Comparing nuance and usage…</p>}
-                  {comparison.sections.map((section, index) => (
+                  {hasDetailedComparison && comparison.sections.map((section, index) => (
                     <details key={section.title} open={index === 0}>
                       <summary>{section.title}</summary>
                       <p>{section.content}</p>
                     </details>
                   ))}
+                  {loading !== "compare" && !hasDetailedComparison && (
+                    <div className="comparison-empty">
+                      <p>No template explanation is shown here. Generate the comparison to load the actual distinctions, collocations, examples, and misuse notes.</p>
+                      <button onClick={() => selectNode(selected)}>Generate comparison</button>
+                    </div>
+                  )}
                 </div>
-                <div className="source-row"><button>◉ Sources</button><span>{comparison.evidence_note ?? "Curated sample · live results use AI synthesis"}</span></div>
-                <div className="quality-actions">
-                  <button onClick={() => setFeedback("Thanks. This example has been marked for replacement.")}>This example sounds unnatural</button>
-                  <button onClick={explainAnotherWay}>Explain another way</button>
-                </div>
+                {hasDetailedComparison && (
+                  <>
+                    <div className="source-row"><button>◉ Sources</button><span>{comparison.evidence_note ?? "Curated sample · live results use AI synthesis"}</span></div>
+                    <div className="quality-actions">
+                      <button onClick={() => setFeedback("Thanks. This example has been marked for replacement.")}>This example sounds unnatural</button>
+                      <button onClick={explainAnotherWay}>Explain another way</button>
+                    </div>
+                  </>
+                )}
                 <div className="word-status">
                   <p>These mark only <strong>{selected}</strong>. Use “Save contrast” below to save the pair.</p>
                   <div>

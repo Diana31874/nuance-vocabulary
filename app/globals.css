@@ -158,6 +158,9 @@ h1 em { color: var(--green-deep); font-style: italic; }
 .detail-sections details[open] summary::after { content: "−"; }
 .detail-sections p { margin: -1px 30px 13px 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .ai-loading { padding: 12px 0; color: var(--green-deep) !important; font-style: italic; }
+.comparison-empty { padding: 14px 0; }
+.comparison-empty p { margin: 0 0 10px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.comparison-empty button { padding: 7px 10px; border: 1px solid var(--hairline); border-radius: 9px; background: var(--surface-solid); color: var(--green-deep); font-size: 9px; font-weight: 600; }
 .source-row { margin: 8px 26px 0; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; }
 .source-row button { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 9px; }
 .quality-actions { display: flex; gap: 7px; margin: 9px 26px 0; }
