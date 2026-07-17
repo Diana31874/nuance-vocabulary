@@ -1,0 +1,10 @@
+packages:
+  - .
+
+# These packages ship native binaries used by the Next.js/Vite/Cloudflare build.
+# pnpm 11 blocks dependency lifecycle scripts unless they are explicitly trusted.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
+  - workerd
