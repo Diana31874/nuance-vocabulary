@@ -138,7 +138,7 @@ h1 em { color: var(--green-deep); font-style: italic; }
 .center-node small { position: absolute; bottom: 10px; font: 500 8px "DM Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
 .map-hint { position: absolute; z-index: 10; left: 23px; bottom: 17px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
 .map-hint span { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid var(--hairline); border-radius: 8px; background: var(--surface-solid); color: var(--green-deep); font-family: Georgia, serif; font-style: italic; }
-.comparison-panel { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.comparison-panel { display: block; min-width: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
 .panel-head { padding: 22px 26px 18px; border-bottom: 1px solid var(--hairline); }
 .panel-kicker { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
 .panel-kicker button { border: 0; background: transparent; color: var(--muted); }
@@ -150,7 +150,10 @@ h1 em { color: var(--green-deep); font-style: italic; }
 .verdict p { margin: 0; font: 500 15.5px/1.43 "Newsreader", Georgia, serif; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 26px 13px; }
 .chips span { padding: 5px 8px; border: 1px solid var(--hairline); border-radius: 9px; background: color-mix(in srgb, var(--surface-solid) 70%, var(--paper)); color: var(--muted); font-size: 9px; }
-.detail-sections { margin: 0 26px; border-top: 1px solid var(--hairline); overflow: auto; }
+.detail-sections { margin: 0 26px; border-top: 1px solid var(--hairline); }
+.comparison-tools { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--hairline); color: var(--muted); font-size: 9px; }
+.comparison-tools span { font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+.comparison-tools button { padding: 5px 7px; border: 0; border-radius: 8px; background: var(--paper-deep); color: var(--green-deep); font-size: 9px; font-weight: 600; }
 .detail-sections details { border-bottom: 1px solid var(--hairline); }
 .detail-sections summary { min-height: 40px; list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; }
 .detail-sections summary::-webkit-details-marker { display: none; }
@@ -165,13 +168,15 @@ h1 em { color: var(--green-deep); font-style: italic; }
 .source-row button { padding: 0; border: 0; background: transparent; color: var(--green-deep); font-size: 9px; }
 .quality-actions { display: flex; gap: 7px; margin: 9px 26px 0; }
 .quality-actions button { padding: 5px 7px; border: 0; background: transparent; color: var(--muted); font-size: 8px; text-decoration: underline; text-underline-offset: 3px; }
-.word-status { margin: 10px 26px 0; }
-.word-status p { margin: 0 0 7px; color: var(--muted); font-size: 9px; line-height: 1.4; }
-.word-status p strong { color: var(--ink); font-weight: 600; }
+.learning-controls { margin-top: 12px; padding: 14px 26px 19px; border-top: 1px solid var(--hairline); background: color-mix(in srgb, var(--paper) 42%, transparent); }
+.learning-heading strong { display: block; font: 500 16px "Newsreader", Georgia, serif; }
+.learning-heading p { margin: 4px 0 10px; color: var(--muted); font-size: 9.5px; line-height: 1.45; }
+.learning-heading b { color: var(--ink); font-weight: 600; }
+.word-status { margin: 0; }
 .word-status > div { display: flex; gap: 7px; }
-.word-status button { flex: 1; min-height: 32px; padding: 5px 8px; border: 1px solid var(--hairline); border-radius: 10px; background: transparent; font-size: 9px; }
+.word-status button { flex: 1; min-height: 36px; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--surface-solid); font-size: 9px; }
 .word-status button.chosen { background: var(--green-soft); border-color: var(--green); color: var(--green-deep); }
-.panel-actions { margin-top: auto; padding: 12px 26px 19px; display: flex; gap: 8px; }
+.panel-actions { padding: 8px 0 0; display: flex; gap: 8px; }
 .panel-actions button { flex: 1; min-height: 40px; padding: 0 8px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-solid); font-size: 10px; font-weight: 600; }
 .panel-actions button.primary { margin: 0; border: 0; }
 .feature-page { padding-top: 20px; }
@@ -239,8 +244,7 @@ h1 em { color: var(--green-deep); font-style: italic; }
   .app-shell { padding: 0 24px 30px; }
   .workspace { height: auto; min-height: 0; grid-template-columns: 1fr; }
   .map-card { height: 620px; }
-  .comparison-panel { max-height: none; }
-  .detail-sections { max-height: 280px; }
+  .comparison-panel { max-height: none; overflow: visible; }
   .choose-layout { grid-template-columns: 1fr; }
   .daily-word { grid-template-columns: 1fr; }
   .daily-preview { border-left: 0; border-top: 1px solid color-mix(in srgb, var(--green) 46%, var(--hairline)); }
@@ -271,7 +275,8 @@ h1 em { color: var(--green-deep); font-style: italic; }
   .edge-label { left: 65%; font-size: 8px; }
   .map-hint { right: 15px; bottom: 9px; }
   .comparison-panel { position: relative; margin-top: 12px; border-radius: 24px; }
-  .panel-head, .verdict, .chips, .detail-sections, .source-row, .word-status { margin-left: 18px; margin-right: 18px; }
+  .panel-head, .verdict, .chips, .detail-sections, .source-row { margin-left: 18px; margin-right: 18px; }
+  .learning-controls { padding-left: 18px; padding-right: 18px; }
   .panel-head { margin: 0; padding-left: 18px; padding-right: 18px; }
   .panel-actions { padding-left: 18px; padding-right: 18px; }
   .feature-page { padding-top: 8px; }

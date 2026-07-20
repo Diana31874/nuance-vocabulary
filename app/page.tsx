@@ -209,8 +209,10 @@ export default function Home() {
   const [practiceAnswer, setPracticeAnswer] = useState("");
   const [aiPractice, setAiPractice] = useState<(typeof practiceQuestions)[number] & { alternatives?: string } | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [allSectionsOpen, setAllSectionsOpen] = useState(false);
   const gardenRef = useRef<HTMLDivElement>(null);
   const centerRef = useRef<HTMLButtonElement>(null);
+  const comparisonPanelRef = useRef<HTMLElement>(null);
   const nodeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const comparisonRequestRef = useRef(0);
 
@@ -311,7 +313,9 @@ export default function Home() {
     comparisonRequestRef.current = requestId;
     setSelected(target);
     setAiComparison(null);
+    setAllSectionsOpen(false);
     setLoading("compare");
+    comparisonPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     try {
       const data = await requestAi<ComparisonData>("compare", { base, target, sense });
       if (comparisonRequestRef.current === requestId) {
@@ -610,7 +614,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <aside className="comparison-panel">
+              <aside className="comparison-panel" ref={comparisonPanelRef}>
                 <div className="panel-head">
                   <div className="panel-kicker">Comparison <button aria-label="More comparison options">•••</button></div>
                   <div className="pair"><span>{centerWord}</span><i>and</i><strong>{selected}</strong></div>
@@ -622,9 +626,17 @@ export default function Home() {
                 </div>
                 <div className="chips">{comparison.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
                 <div className="detail-sections">
+                  {hasDetailedComparison && (
+                    <div className="comparison-tools">
+                      <span>Six-part comparison</span>
+                      <button onClick={() => setAllSectionsOpen((open) => !open)}>
+                        {allSectionsOpen ? "Collapse sections" : "Expand all sections"}
+                      </button>
+                    </div>
+                  )}
                   {loading === "compare" && <p className="ai-loading">Comparing nuance and usage…</p>}
                   {hasDetailedComparison && comparison.sections.map((section, index) => (
-                    <details key={section.title} open={index === 0}>
+                    <details key={`${centerWord}-${selected}-${section.title}-${allSectionsOpen}`} open={allSectionsOpen || index === 0}>
                       <summary>{section.title}</summary>
                       <p>{section.content}</p>
                     </details>
@@ -645,17 +657,22 @@ export default function Home() {
                     </div>
                   </>
                 )}
-                <div className="word-status">
-                  <p>These mark only <strong>{selected}</strong>. Use “Save contrast” below to save the pair.</p>
-                  <div>
-                    <button onClick={() => markWord("familiar")} aria-pressed={familiar.includes(selected)} className={familiar.includes(selected) ? "chosen" : ""}>Familiar: {selected}</button>
-                    <button onClick={() => markWord("new")} aria-pressed={newWords.includes(selected)} className={newWords.includes(selected) ? "chosen" : ""}>New to me: {selected}</button>
+                <section className="learning-controls" aria-label="Learning and saving options">
+                  <div className="learning-heading">
+                    <strong>Remember this vocabulary</strong>
+                    <p>The first two choices apply only to <b>{selected}</b>. The pair button saves the comparison between both words.</p>
                   </div>
-                </div>
-                <div className="panel-actions">
-                  <button onClick={() => setFeedback(`A new map would open with “${selected}” at its center.`)}>Explore from {selected}</button>
-                  <button className="primary" onClick={saveContrast}>{saved.includes(`${centerWord} · ${selected}`) ? "Saved ✓" : "Save contrast"}</button>
-                </div>
+                  <div className="word-status">
+                  <div>
+                      <button onClick={() => markWord("familiar")} aria-pressed={familiar.includes(selected)} className={familiar.includes(selected) ? "chosen" : ""}>I know “{selected}”</button>
+                      <button onClick={() => markWord("new")} aria-pressed={newWords.includes(selected)} className={newWords.includes(selected) ? "chosen" : ""}>Learn “{selected}”</button>
+                    </div>
+                  </div>
+                  <div className="panel-actions">
+                    <button onClick={() => void exploreWord(selected)}>Explore from “{selected}”</button>
+                    <button className="primary" onClick={saveContrast}>{saved.includes(`${centerWord} · ${selected}`) ? `Pair saved ✓` : `Save pair: ${centerWord} ↔ ${selected}`}</button>
+                  </div>
+                </section>
               </aside>
             </section>
           </>
